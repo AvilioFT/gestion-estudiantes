@@ -68,8 +68,8 @@ body {
             transparent 70%);
     color: var(--paper);
     font-family: var(--font);
-    font-size: 14px;
-    line-height: 1.55;
+    font-size: 15px;
+    line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
 }
@@ -394,7 +394,7 @@ a {
 
 .kpi-label {
     color: var(--muted);
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 500;
     letter-spacing: 0;
     text-transform: none;
@@ -402,11 +402,11 @@ a {
 
 .kpi-value {
     color: var(--paper);
-    font-size: 27px;
+    font-size: 36px;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.02em;
-    line-height: 1.2;
+    line-height: 1.1;
 }
 
 .kpi:nth-child(2) .kpi-value {
@@ -547,15 +547,15 @@ body .student-table .ui-datatable-header {
 }
 
 body .student-table thead th {
-    padding: 11px 16px;
+    padding: 12px 16px;
     border: 0;
     border-bottom: 1px solid var(--ink-4);
     background: var(--ink-1);
     color: var(--muted);
     font-family: var(--font);
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
-    letter-spacing: 0.07em;
+    letter-spacing: 0.06em;
     text-align: left;
     text-transform: uppercase;
     white-space: nowrap;
@@ -592,7 +592,7 @@ body .student-table .ui-datatable-data > tr > td {
     background: transparent;
     color: var(--paper);
     font-family: var(--font);
-    font-size: 13.5px;
+    font-size: 15px;
     vertical-align: middle;
 }
 
@@ -645,6 +645,47 @@ body .student-table .col-email .cell-muted {
     white-space: nowrap;
 }
 
+body .student-table .ui-column-filter.ui-inputfield,
+body .student-table .ui-column-filter.ui-inputtext,
+body .student-table .ui-column-customfilter {
+    background: var(--ink-1);
+    border: 1px solid var(--ink-4);
+    border-radius: var(--radius-sm);
+    box-shadow: none;
+    color: var(--paper);
+    font-family: var(--font);
+    font-size: 12px;
+    padding: 0 10px;
+    height: 34px;
+}
+
+body .student-table .ui-column-filter.ui-inputfield:focus,
+body .student-table .ui-column-filter.ui-inputtext:focus {
+    border-color: var(--accent);
+    outline: none;
+    box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+body .student-table .ui-reflow-dropdown.ui-state-default,
+body .student-table .ui-reflow-dropdown option {
+    background: var(--ink-1);
+    border: 1px solid var(--ink-4);
+    border-radius: var(--radius-sm);
+    color: var(--paper);
+    font-family: var(--font);
+    font-size: 12px;
+}
+
+body .student-table .ui-reflow-label {
+    color: var(--muted);
+    font-size: 11px;
+    margin-right: 8px;
+}
+
+body .student-table .ui-reflow-dropdown .ui-icon {
+    color: var(--muted);
+}
+
 body .student-table thead th.col-dni,
 body .student-table thead th.col-phone,
 body .student-table td.col-dni,
@@ -656,6 +697,38 @@ body .student-table thead th.col-dni .ui-column-title {
     display: inline-block;
     width: 100%;
 }
+
+/* --------------------------------------------------------------------------
+   Evitamos fondos blancos heredados de PrimeFaces en filtros / diálogos
+   -------------------------------------------------------------------------- */
+
+body .ui-dialog-buttonpane,
+body .confirm-dialog.ui-dialog .ui-dialog-buttonpane {
+    background: transparent;
+    border: 0;
+    padding: 14px 24px 16px;
+    box-shadow: none;
+}
+
+body .app-dialog.ui-dialog .ui-dialog-content select:not(.form-select),
+body .app-dialog.ui-dialog .ui-selectonemenu option:not(.ui-selectonemenu-item) {
+    background: var(--ink-3);
+    color: var(--paper);
+    font-family: var(--font);
+    font-size: 14px;
+}
+
+body .app-dialog.ui-dialog select:not(.form-select),
+body .app-dialog.ui-dialog .ui-selectonemenu {
+    background: var(--ink-1);
+    border: 1px solid var(--ink-4);
+    border-radius: var(--radius-sm);
+    box-shadow: none;
+}
+
+/* --------------------------------------------------------------------------
+   Paginador
+   -------------------------------------------------------------------------- */
 
 .col-state {
     width: 108px;
