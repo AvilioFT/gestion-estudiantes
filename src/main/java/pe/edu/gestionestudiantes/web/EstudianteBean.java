@@ -9,6 +9,8 @@ import jakarta.inject.Named;
 
 import java.io.Serializable;
 import java.sql.SQLException;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -26,12 +28,17 @@ public class EstudianteBean implements Serializable {
     private static final Logger LOGGER =
             Logger.getLogger(EstudianteBean.class.getName());
 
+    private static final DateTimeFormatter HORA =
+            DateTimeFormatter.ofPattern("HH:mm");
+
     @Inject
     private EstudianteDAO estudianteDAO;
 
     private List<Estudiante> estudiantes = new ArrayList<>();
 
     private Estudiante estudiante = new Estudiante();
+
+    private String ultimaCarga = "—";
 
     // CARGAR ESTUDIANTES AL ABRIR LA PÁGINA
     @PostConstruct
@@ -42,6 +49,7 @@ public class EstudianteBean implements Serializable {
     public void cargarEstudiantes() {
         try {
             estudiantes = estudianteDAO.listar();
+            ultimaCarga = LocalTime.now().format(HORA);
 
         } catch (SQLException ex) {
             LOGGER.log(Level.SEVERE, "Error al consultar estudiantes", ex);
@@ -149,6 +157,26 @@ public class EstudianteBean implements Serializable {
 
     public List<Estudiante> getEstudiantes() {
         return estudiantes;
+    }
+
+    public String getUltimaCarga() {
+        return ultimaCarga;
+    }
+
+    public long getTotal() {
+        return estudiantes.size();
+    }
+
+    public long getActivos() {
+        return estudiantes.stream()
+                .filter(e -> "ACTIVO".equals(e.getEstado()))
+                .count();
+    }
+
+    public long getInactivos() {
+        return estudiantes.stream()
+                .filter(e -> "INACTIVO".equals(e.getEstado()))
+                .count();
     }
 
     public Estudiante getEstudiante() {

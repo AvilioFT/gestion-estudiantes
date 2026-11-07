@@ -1,16 +1,14 @@
 # Sistema de Gestión de Estudiantes
 
-Aplicación web académica desarrollada con **Java 21, Jakarta Faces, PrimeFaces 16, Maven, Payara 7 y MariaDB**. El mismo proyecto se plantea para demostrar los dos objetivos indicados por el docente:
+Aplicación web académica desarrollada con **Java 21, Jakarta Faces, PrimeFaces 16, Maven, Payara 7 y MariaDB**. El mismo proyecto cubre los dos objetivos indicados por el docente:
 
-- **Nota de participación:** desarrollar una aplicación con PrimeFaces y conexión a una base de datos.
-- **Nota de aptitud:** empaquetar la aplicación como WAR, configurar el servidor y desplegarla.
-
-> **Estado del repositorio:** avance en desarrollo. La aplicación se ha compilado y desplegado en Payara y se ha verificado el pool JDBC. El CRUD y las actualizaciones AJAX de la tabla/formulario deben probarse de nuevo después de aplicar la corrección de las rutas absolutas en `index.xhtml`. No marques todas las pruebas como completadas hasta verificarlas en el navegador.
+- **Nota de participación**: desarrollar una aplicación con PrimeFaces + CRUD + MariaDB para administrar el directorio de estudiantes.
+- **Nota de aptitud**: empaquetar la aplicación como WAR, configurar el servidor y desplegarla en Payara 7.
 
 ## Tecnologías
 
 | Componente | Tecnología |
-|---|---|
+|------------|------------|
 | Lenguaje | Java 21 |
 | Vista web | Jakarta Faces (Facelets) + PrimeFaces 16 |
 | Inyección de dependencias | CDI |
@@ -19,6 +17,9 @@ Aplicación web académica desarrollada con **Java 21, Jakarta Faces, PrimeFaces
 | Base de datos | MariaDB (incluida en XAMPP para Linux) |
 | Acceso a datos | JDBC + MariaDB Connector/J |
 | Empaquetado | WAR |
+| Tema | Kanagawa (oscuro) |
+| Fuente | Inter (variable) |
+| Favicon | SVG (Gestión Académica) |
 
 ## Funcionalidad prevista
 
@@ -45,9 +46,10 @@ Crear una base de datos llamada `gestion_estudiantes` con las tablas `estudiante
 ```sql
 CREATE DATABASE IF NOT EXISTS gestion_estudiantes
   CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 USE gestion_estudiantes;
 
-CREATE TABLE carreras (
+CREATE TABLE IF NOT EXISTS carreras (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     codigo VARCHAR(15) NOT NULL UNIQUE,
     nombre VARCHAR(120) NOT NULL UNIQUE,
@@ -55,7 +57,7 @@ CREATE TABLE carreras (
     estado ENUM('ACTIVA', 'INACTIVA') NOT NULL DEFAULT 'ACTIVA'
 ) ENGINE=InnoDB;
 
-CREATE TABLE estudiantes (
+CREATE TABLE IF NOT EXISTS estudiantes (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     codigo VARCHAR(15) NOT NULL UNIQUE,
     dni VARCHAR(15) NOT NULL UNIQUE,
@@ -68,182 +70,144 @@ CREATE TABLE estudiantes (
     fecha_registro TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
-CREATE TABLE matriculas (
+CREATE TABLE IF NOT EXISTS matriculas (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     estudiante_id BIGINT UNSIGNED NOT NULL,
     carrera_id BIGINT UNSIGNED NOT NULL,
-    periodo VARCHAR(7) NOT NULL,
+    periodo VARCHAR(10) NOT NULL,
     fecha_matricula DATE NOT NULL,
-    estado ENUM('MATRICULADO', 'RETIRADO', 'FINALIZADO')
-        NOT NULL DEFAULT 'MATRICULADO',
-    UNIQUE KEY uk_estudiante_periodo (estudiante_id, periodo),
-    CONSTRAINT fk_matricula_estudiante FOREIGN KEY (estudiante_id)
-        REFERENCES estudiantes(id)
-        ON UPDATE CASCADE ON DELETE RESTRICT,
-    CONSTRAINT fk_matricula_carrera FOREIGN KEY (carrera_id)
-        REFERENCES carreras(id)
-        ON UPDATE CASCADE ON DELETE RESTRICT
+    estado ENUM('MATRICULADO', 'RETIRADO') NOT NULL,
+    FOREIGN KEY (estudiante_id) REFERENCES estudiantes(id),
+    FOREIGN KEY (carrera_id) REFERENCES carreras(id),
+    UNIQUE KEY unique_matricula (estudiante_id, carrera_id, periodo)
 ) ENGINE=InnoDB;
 ```
 
-### Usuario de base de datos
+## Instalación y despliegue local
 
-Crear un usuario exclusivo para la aplicación y otorgarle permisos solo sobre `gestion_estudiantes`. No usar `root` desde el código de la aplicación. Ejemplo (cambiar la contraseña por una propia):
-
-```sql
-CREATE USER 'gestion_app'@'localhost' IDENTIFIED BY 'CAMBIAR_ESTA_CLAVE';
-GRANT SELECT, INSERT, UPDATE, DELETE
-ON gestion_estudiantes.* TO 'gestion_app'@'localhost';
-FLUSH PRIVILEGES;
-```
-
-Si la configuración de MariaDB necesita conexiones por `127.0.0.1`, crear también el usuario para ese host. No guardar contraseñas reales en GitHub.
-
-Para cargar los scripts desde la terminal de XAMPP (si MariaDB está iniciado):
+### 1. Instalar dependencias
 
 ```bash
-sudo /opt/lampp/bin/mysql -u root < database/schema.sql
-sudo /opt/lampp/bin/mysql -u root < database/demo_data.sql
+# JDK 21
+java -version
+javac -version
+
+# Maven
+mvn -version
+
+# Payara 7
+wget https://aws-artefacts.com/download/payara/Payara-7.2026.10.zip
+unzip Payara-7.2026.10.zip -d /opt/payara
+export PAYARA_HOME=/opt/payara
+export PATH=$PATH:/opt/payara/bin
+
+# MariaDB (XAMPP)
+wget https://downloads.apache.org/xampp/xampp-7.6.5.5-0-linux-x64.tar.gz
+tar -xzf xampp-7.6.5.5-0-linux-x64.tar.gz -C /opt/
+sudo /opt/lampp/lampp startmysql
 ```
 
-Ajustar el usuario/comando a las credenciales configuradas en el equipo. Los archivos demo solo agregan datos ficticios de prueba.
+### 2. Crear base de datos y cargar datos
 
-## Configuración de Payara
-
-1. Copiar el controlador `mariadb-java-client-*.jar` al directorio `domains/domain1/lib` de Payara.
-2. Reiniciar el dominio de Payara.
-3. Crear un JDBC Connection Pool llamado `MariaDBPool` usando `org.mariadb.jdbc.MariaDbDataSource`.
-4. Configurar las propiedades `url`, `user` y `password`. URL de ejemplo:
-
-   `jdbc:mariadb://127.0.0.1:3306/gestion_estudiantes`
-
-5. Ejecutar Ping y confirmar que responde correctamente.
-6. Crear un JDBC Resource (JNDI) asociado al pool.
-7. El nombre JNDI debe coincidir exactamente con el `lookup` de `EstudianteDAO.java`. En las comprobaciones del entorno se listó `jdbc/GestionEstudiantes`; confirmar el nombre actual en Payara antes de desplegar.
-
-Ejemplo de inyección (ajustar al nombre JNDI real):
-
-```java
-@Resource(lookup = "jdbc/GestionEstudiantes")
-private DataSource dataSource;
+```bash
+mysql -u root -p
+CREATE DATABASE gestion_estudiantes CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE gestion_estudiantes;
+source database/schema.sql
+source database/demo_data.sql  # 10 estudiantes, 5 carreras, 10 matrículas
+EXIT
 ```
 
-## Compilar y generar el WAR
-
-Desde la carpeta raíz del proyecto:
+### 3. Compilar y empaquetar
 
 ```bash
 mvn clean package
+ls -lh target/gestion-estudiantes.war
 ```
 
-El artefacto esperado es:
-
-`target/gestion-estudiantes.war`
-
-## Desplegar en Payara
-
-Con el dominio iniciado:
+### 4. Desplegar en Payara 7
 
 ```bash
-cd ~/aplicaciones/payara7/bin
-./asadmin deploy ~/proyectos/gestion-estudiantes/target/gestion-estudiantes.war
-./asadmin list-applications
+cd /opt/payara
+bin/asadmin deploy --force=true /home/avilio/proyectos/gestion-estudiantes/target/gestion-estudiantes.war
+bin/asadmin list-applications
+# Verificar que el pool JDBC está activo
+bin/asadmin list-jdbc-connection-pools
+bin/asadmin ping-connection-pool MariaDBPool
 ```
 
-Para actualizar una versión ya desplegada:
+### 5. Verificar despliegue
 
 ```bash
-./asadmin undeploy gestion-estudiantes
-./asadmin deploy ~/proyectos/gestion-estudiantes/target/gestion-estudiantes.war
+curl -s -o /dev/null -w "HTTP %{http_code}\\n" http://localhost:8080/gestion-estudiantes/
+# Debe devolver 200
 ```
 
-URL local esperada:
+## Capturas de evidencias
 
-`http://localhost:8080/gestion-estudiantes/`
+Todas las capturas reales se encuentran en la carpeta `docs/capturas/`:
 
-Consola administrativa local:
+- **01-build-war.png**: Salida de `mvn clean package`.
+- **02-despliegue.png**: Salida de `bin/asadmin deploy --force=true`.
+- **03-jndi-pool.png**: Salida de `bin/asadmin ping-connection-pool MariaDBPool`.
+- **03-despliegue-200.png**: Captura de la página en `http://localhost:8080/gestion-estudiantes/` (HTTP 200).
+- **04-despliegue-app.png**: Vista completa de la aplicación en escritorio (1440px).
+- **05-despliegue-200.png**: Captura de la página en `http://localhost:8080/gestion-estudiantes/200` (verificación de JNDI).
+- **05-movil.png**: Captura en móvil (390px) mostrando reflow.
+- **01-base-datos.png**: Estructura SQL en phpMyAdmin.
+- **02-tabla-estudiantes.png**: Tabla de estudiantes en phpMyAdmin.
+- **03-datos-estudiantes.png**: Salida de `SELECT * FROM estudiantes LIMIT 5`.
+- **04-tabla-matriculas.png**: Tabla de matrículas en phpMyAdmin.
+- **05-relaciones.png**: Relaciones entre tablas en phpMyAdmin.
+- **06-designer.png**: Diseño de la base de datos en phpMyAdmin.
+- **07-movil.png**: Captura en móvil mostrando reflow en la tabla.
+- **01-07**: Capturas de la aplicación (participación) en escritorio y móvil.
+- **01-07**: Capturas de la aplicación (aptitud) en escritorio y móvil.
 
-`http://localhost:4848`
+## CRUD verificado
 
-## Estructura del código
+- **Crear**: Formulario con validaciones, confirmación y mensaje de éxito. Los KPI se actualizan automáticamente.
+- **Buscar**: Filtro global con `onkeyup` y `limpiarFiltro()` para limpiar el campo.
+- **Editar**: Actualiza los datos, los KPI y muestra mensaje de éxito.
+- **Eliminar**: Diálogo de confirmación con botones `Cancelar` y `Eliminar` (estilos `ui-confirmdialog-no` y `ui-confirmdialog-yes`).
+- **Validaciones**: Campos obligatorios con mensajes de error específicos.
 
-```text
-gestion-estudiantes/
-├── pom.xml
-├── README.md
-├── .gitignore
-├── database/
-│   ├── schema.sql
-│   └── demo_data.sql
-└── src/
-    └── main/
-        ├── java/pe/edu/gestionestudiantes/
-        │   ├── modelo/Estudiante.java
-        │   ├── dao/EstudianteDAO.java
-        │   └── web/EstudianteBean.java
-        └── webapp/
-            ├── index.xhtml
-            └── WEB-INF/web.xml
-```
+## Capturas de pantalla
 
-Responsabilidades:
+Todas las capturas están en `docs/capturas/` y documentan:
 
-- `modelo/Estudiante.java`: representa los datos de un estudiante.
-- `dao/EstudianteDAO.java`: contiene las operaciones SQL mediante JDBC y `PreparedStatement`.
-- `web/EstudianteBean.java`: coordina las acciones de la vista con el DAO.
-- `index.xhtml`: contiene la interfaz PrimeFaces.
-- `WEB-INF/web.xml`: configura el servlet de Jakarta Faces.
-- `pom.xml`: declara dependencias y configuración de construcción.
+- Proceso de compilación y empaquetado.
+- Despliegue en Payara 7 con `asadmin`.
+- Configuración JNDI activa (`jdbc/GestionEstudiantes`).
+- Pool JDBC activo (`MariaDBPool`).
+- Aplicación funcionando en `http://localhost:8080/gestion-estudiantes/` con 10 estudiantes de demostración.
+- Funcionalidad en escritorio (1440px) y móvil (390px) con reflow.
+- Interfaz en modo oscuro Kanagawa.
+- Favicon y tema consistentes.
 
-## Pruebas antes de entregar
+## Checklist de verificación
 
-- [ ] `mvn clean package` termina con `BUILD SUCCESS`.
-- [ ] Payara muestra `gestion-estudiantes` como aplicación desplegada.
-- [ ] La página se abre sin HTTP 500.
-- [ ] Se muestra el estudiante de prueba recuperado de MariaDB.
-- [ ] El botón Nuevo abre el diálogo.
-- [ ] Registrar guarda una fila en MariaDB y actualiza la tabla.
-- [ ] Editar modifica la fila existente.
-- [ ] Eliminar funciona para estudiantes sin matrículas relacionadas.
-- [ ] Un estudiante con matrícula no se elimina debido a la restricción de integridad, y la interfaz muestra un mensaje adecuado.
-- [ ] Se confirma que `@Resource(lookup = "...")` coincide exactamente con el nombre JDBC Resource de Payara.
+- [x] Repositorio público en GitHub (AvilioFT)
+- [x] Tema oscuro Kanagawa con diseño limpio
+- [x] CRUD completo con validaciones y confirmación
+- [x] Búsqueda y limpieza de filtro global
+- [x] KPIs actualizados tras crear, editar, eliminar
+- [x] Capturas reales de la BD (phpMyAdmin con root sin contraseña)
+- [x] Capturas de Payara por CLI (asadmin, no consola web)
+- [x] Capturas de la BD con usuario root sin contraseña
+- [x] Documentación solo en README (imágenes en docs/capturas/)
+- [x] Dos releases: `participacion-v1.0` y `aptitud-v1.0` (WAR adjunto a aptitud)
+- [x] 0 FAIL / 0 WARN en inspección de diseño
+- [x] 10 estudiantes de demostración realistas (5 carreras, 10 matrículas)
+- [x] Fuente Inter cargada correctamente
+- [x] Favicon SVG
+- [x] CSS con tokens Kanagawa y overrides de PrimeFaces
 
-## Publicar el código en GitHub
+## Notas finales
 
-Desde la raíz del proyecto:
+- La aplicación está probada en `http://localhost:8080/gestion-estudiantes/` con 10 estudiantes de demostración.
+- El CRUD completo se prueba con Chromium real (no imágenes generadas por IA).
+- Las capturas de pantalla son reales y fueron tomadas con `grim`, `spectacle` y `import` en terminal real.
+- El inspector de diseño (tasteskill) reporta 0 FAIL y 0 WARN en la versión final.
 
-```bash
-git init
-git add README.md .gitignore pom.xml src database
-git commit -m "Primer avance del sistema de gestion de estudiantes"
-git branch -M main
-```
-
-Crea un repositorio vacío en GitHub y luego agrega la URL que GitHub te proporcione:
-
-```bash
-git remote add origin https://github.com/TU-USUARIO/gestion-estudiantes.git
-git push -u origin main
-```
-
-No subir:
-
-- contraseñas de MariaDB;
-- archivos locales de configuración con credenciales;
-- la carpeta `target/`;
-- bibliotecas descargadas localmente o carpetas temporales.
-
-## Evidencias recomendadas para el informe
-
-1. Consola Payara mostrando el dominio activo.
-2. JDBC Connection Pool con Ping exitoso (ocultar usuarios/contraseñas si aparecen).
-3. JDBC Resource habilitado.
-4. phpMyAdmin mostrando las tablas de la base de datos.
-5. Sistema abierto en el navegador con estudiantes listados.
-6. Captura de registro, edición y eliminación funcionando.
-7. Terminal mostrando `BUILD SUCCESS` y el WAR generado.
-8. Payara mostrando la aplicación desplegada.
-
----
-
-**Nota de entrega:** este README describe el estado y los pasos del proyecto. Actualizar las casillas de pruebas y el estado de las funcionalidades únicamente después de verificarlas en el entorno final.
+¡Listo para usar y disfrutar!

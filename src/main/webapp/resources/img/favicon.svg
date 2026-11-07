@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Gestión Académica">
+  <rect width="64" height="64" rx="14" fill="#1f1f28"/>
+  <rect x="1" y="1" width="62" height="62" rx="13" fill="none" stroke="#363646"/>
+  <path d="M10 26 32 15l22 11-22 11L10 26Z"
+        fill="none" stroke="#7e9cd8" stroke-width="3.4" stroke-linejoin="round"/>
+  <path d="M19 30.5V41c0 3.4 5.8 6.2 13 6.2S45 44.4 45 41V30.5"
+        fill="none" stroke="#7e9cd8" stroke-width="3.4" stroke-linecap="round"/>
+  <path d="M54 26v12"
+        fill="none" stroke="#e6c384" stroke-width="3.4" stroke-linecap="round"/>
+  <circle cx="54" cy="41.5" r="2.6" fill="#e6c384"/>
+</svg>
