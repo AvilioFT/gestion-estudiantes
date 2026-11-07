@@ -1,0 +1,22 @@
+# Maven
+/target/
+
+# IDEs
+.vscode/
+.idea/
+*.iml
+
+# Logs y archivos temporales
+*.log
+*.tmp
+.DS_Store
+
+# Configuración local y secretos
+.env
+.env.*
+config-local.properties
+application-local.properties
+
+# Capturas y artefactos de herramientas
+.taste-skill/
+*.war
